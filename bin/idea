@@ -1,0 +1,98 @@
+#!/bin/bash
+
+usage(){
+  echo "export IDEA_HOME=<path> $0 <new(default)|flush|ls|search>"
+  echo ""
+  echo "  new             create a new idea"
+  echo "  flush           flush all the ideas to git"
+  echo "  ls              list all the ideas in 3 days"
+  echo "  search <value>  serach all the ideas which contain the given value"
+}
+
+colorful_output_files(){
+  local files=$1
+  local NOCOLOR='\033[0m'
+  local GREEN='\033[0;32m'
+  for file in $files
+  do
+    echo -e "${GREEN}==> ${file} <==${NOCOLOR}"
+    cat $file
+  done
+}
+
+new_note(){
+  local path=$1
+  local today=$(date '+%Y-%m-%d')
+  local time=$(date '+%Y%m%dT%H%M%S')
+
+  if [ ! -d "$path/$today" ]; then
+    mkdir -p "$path/$today"
+  fi
+
+  local new_note="$path/$today/$time.md"
+
+  nvim --cmd "cd ${path}" "$new_note"
+}
+
+flush(){
+  local path=$1
+  local time=$(date '+%Y-%m-%dT%H:%M:%S')
+  if [[ -d "$path/.git" ]]
+  then
+    cd "$path" && git add . && git commit -m "flush @${time}" && git push
+  else
+    echo "$path is not a git repo, can not run flush."
+  fi
+}
+
+recent(){
+  local path=$1
+  local today=$(date '+%Y-%m-%d')
+  local yesterday=$(date -v-1d '+%Y-%m-%d')
+  local the_day_before_yesterday=$(date -v-2d '+%Y-%m-%d')
+  local files=""
+
+  for folder in $the_day_before_yesterday $yesterday $today
+  do
+    if [[ -d "$path/$folder" ]]
+    then
+      files="$files $(cd $path && ls -drt $folder/*)"
+    fi
+  done
+
+  cd $path && colorful_output_files "$files"
+}
+
+search(){
+  local path=$1
+  local pattern=$2
+  local files=$(cd "$path" && ag -l $pattern . | tr '\n' ' ')
+
+  if [[ "$files" != "" ]]
+  then
+    cd $path && colorful_output_files "$files"
+  fi
+}
+
+if [[ "$IDEA_HOME" == "" ]]
+then
+  IDEA_HOME="$HOME/.idea/"
+fi
+
+COMMAND=${1-"new"}
+
+if [[ "$COMMAND" == "flush" ]]
+then
+  flush "$IDEA_HOME"
+elif [[ "$COMMAND" == "new" ]]
+then
+  new_note "$IDEA_HOME"
+elif [[ "$COMMAND" == "ls" ]]
+then
+  recent "$IDEA_HOME"
+elif [[ "$COMMAND" == "search" ]]
+then
+  search "$IDEA_HOME" "$2"
+else
+  usage
+fi
