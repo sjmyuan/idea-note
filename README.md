@@ -8,6 +8,19 @@ you can support box, s3 or google drive easily by some other tools.
 
 Notes: Only MacOS and Neovim have been tested for now.
 
+## Table of Contents
+
+* [Motivation](#motivation)
+* [Features](#features)
+  * [CLI](#cli)
+  * [Vim Plugin](#vim-plugin)
+* [Installation](#installation)
+  * [CLI](#cli)
+  * [Vim Plugin](#vim-plugin)
+* [Usage](#usage)
+  * [CLI](#cli)
+  * [Vim Plugin](#vim-plugin)
+
 ## Motivation
 
 * Collect small learning notes and idea
@@ -97,9 +110,9 @@ $ git clone git@github.com:sjmyuan/idea-note.git
 
 5. Check if the `:Idea` command can work 
 
-  ```sh
-  :Idea
-  ```
+    ```sh
+    :Idea
+    ```
 
 ## Usage
 
