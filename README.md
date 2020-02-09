@@ -14,12 +14,12 @@ Notes: Only MacOS and Neovim have been tested for now.
 * [Features](#features)
   * [CLI](#cli)
   * [Vim Plugin](#vim-plugin)
-* [Installation](#installation)
-  * [CLI](#cli)
-  * [Vim Plugin](#vim-plugin)
+* [Installation(MacOS)](#installationmacos)
+  * [CLI](#cli-1)
+  * [Vim Plugin](#vim-plugin-1)
 * [Usage](#usage)
-  * [CLI](#cli)
-  * [Vim Plugin](#vim-plugin)
+  * [CLI](#cli-2)
+  * [Vim Plugin](#vim-plugin-2)
 
 ## Motivation
 
