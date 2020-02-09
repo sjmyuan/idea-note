@@ -1,10 +1,10 @@
 # Idea Note
 
-idea-note is a tool to manage your idea or note in one place,
+`idea-note` is a tool to manage your idea or notes in one place,
 then you can synchronize the notes to cloud. 
 
 Currently it only support git, but the notes are just a collection of files,
-you can support box, s3, google drive easily by some other tools.
+you can support box, s3 or google drive easily by some other tools.
 
 Notes: Only MacOS and Neovim have been tested for now.
 
@@ -39,60 +39,61 @@ $ git clone git@github.com:sjmyuan/idea-note.git
 
 ### CLI
 
-1. Install the dependency
+1. Install the dependencies
 
-  ```sh
-  $ brew install git
-  $ brew install the_silver_searcher
-  ```
+   ```sh
+   $ brew install git
+   $ brew install the_silver_searcher
+   $ brew install neovim
+   ```
 
-2. Add the `bin` folder to the `PATH` variable in your bash_profile/zsh_profile
+2. Add the `bin` directory to the `PATH` variable in your `bash_profile/zsh_profile`
 
    ```sh
    export PATH="<directory>/bin:$PATH"
    ```
 
-3. Configure `IDEA_HOME` to point to the directory in which you want to store your notes. 
+3. Configure `IDEA_HOME` to be the directory in which you want to store your notes. 
 
-  If you want idea-note to support git synchronization, the directory should be a git repo.
-  The default value of `IDEA_HOME` is `$HOME/.idea/`
+   If you want `idea-note` to support the git synchronization, the directory should be a git repository.
+   The default value of `IDEA_HOME` is `$HOME/.idea/`
 
-  ```sh
-  export IDEA_HOME=<note directory>
-  ```
+   ```sh
+   export IDEA_HOME=<note directory>
+   ```
 
 4. Check if the `idea` command can work 
 
-  ```sh
-  $ idea
-  ```
+   ```sh
+   $ idea
+   ```
 
 ### Vim Plugin
 
 1. Install [fzf](https://github.com/junegunn/fzf)
 
-  ```sh
-  $ brew install fzf
-  ```
+    ```sh
+    $ brew install fzf
+    ```
 
-2. Install the dependency in vimrc, we use [Plug](https://github.com/junegunn/vim-plug) as pulgin manager here.
+2. Install the dependencies in vimrc, we use [Plug](https://github.com/junegunn/vim-plug) as pulgin manager here.
 
-  ```sh
-  Plug '/usr/local/opt/fzf'
-  Plug 'junegunn/fzf.vim'
-  ```
+    ```sh
+    Plug '/usr/local/opt/fzf'
+    Plug 'junegunn/fzf.vim'
+    ```
 
 3. Install the plugin of `idea-note`
 
-  ```sh
-  Plug '<idea-note repo directory>'
-  ```
+    ```sh
+    Plug '<idea-note repository directory>'
+    ```
 
-4. Configure the notes directory, if you also install the cli, can use `$IDEA_HOME` directly.
+4. Configure the notes directory, if you already installed the cli, can use `$IDEA_HOME` directly.
 
-  ```sh
-  let g:idea#home = $IDEA_HOME
-  ```
+    ```sh
+    let g:idea#home = $IDEA_HOME
+    ```
 
 5. Check if the `:Idea` command can work 
 
