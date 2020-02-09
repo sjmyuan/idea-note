@@ -8,6 +8,10 @@ you can support box, s3 or google drive easily by some other tools.
 
 Notes: Only MacOS and Neovim have been tested for now.
 
+![](https://tva1.sinaimg.cn/large/0082zybply1gbqavnj5w2g30dc0ace81.gif)
+
+![](https://tva1.sinaimg.cn/large/0082zybply1gbqavszdd0g30dc0ac4qq.gif)
+
 ## Table of Contents
 
 * [Motivation](#motivation)
