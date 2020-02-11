@@ -1,12 +1,12 @@
 #!/bin/bash
 
 usage(){
-  echo "export IDEA_HOME=<path> $0 <new(default)|flush|ls|search>"
+  echo "export IDEA_HOME=<path> $0 <open(default)|flush|ls|search>"
   echo ""
-  echo "  new             create a new idea"
-  echo "  flush           flush all the ideas to git"
-  echo "  ls              list all the ideas in 3 days"
-  echo "  search <value>  serach all the ideas which contain the given value"
+  echo "  open [note]     create a new note or open the existion note"
+  echo "  flush           flush all the notes to git"
+  echo "  ls              list all the notes in 3 days"
+  echo "  search <value>  serach all the notes which contain the given value"
 }
 
 colorful_output_files(){
@@ -15,23 +15,36 @@ colorful_output_files(){
   local GREEN='\033[0;32m'
   for file in $files
   do
-    echo -e "${GREEN}==> ${file} <==${NOCOLOR}"
+    echo -e "${GREEN}==> idea open ${file} <==${NOCOLOR}"
     cat $file
   done
 }
 
-new_note(){
+open_note(){
   local path=$1
   local today=$(date '+%Y-%m-%d')
   local time=$(date '+%Y%m%dT%H%M%S')
+  local note=$2
 
-  if [ ! -d "$path/$today" ]; then
-    mkdir -p "$path/$today"
+  if [[ "${note}" == "" ]]
+  then
+    if [[ ! -d "$path/$today" ]]; then
+      mkdir -p "$path/$today"
+    fi
+    note="$today/$time.md"
+  else
+    if [[ ! -f "$path/$note" ]]
+    then
+      note=$(echo $note|sed -e 's/ /-/')
+      if [[ ! $note =~ .*\.md$ ]]; then
+        note="$today/$note.md"
+      else
+        note="$today/$note"
+      fi
+    fi
   fi
 
-  local new_note="$path/$today/$time.md"
-
-  nvim --cmd "cd ${path}" "$new_note"
+  cd ${path} && $EDITOR "$path/$note"
 }
 
 flush(){
@@ -79,14 +92,14 @@ then
   IDEA_HOME="$HOME/.idea/"
 fi
 
-COMMAND=${1-"new"}
+COMMAND=${1-"open"}
 
 if [[ "$COMMAND" == "flush" ]]
 then
   flush "$IDEA_HOME"
-elif [[ "$COMMAND" == "new" ]]
+elif [[ "$COMMAND" == "open" ]]
 then
-  new_note "$IDEA_HOME"
+  open_note "$IDEA_HOME" "$2"
 elif [[ "$COMMAND" == "ls" ]]
 then
   recent "$IDEA_HOME"
