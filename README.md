@@ -37,6 +37,7 @@ Notes: Only MacOS and Neovim have been tested for now.
 ### CLI
 
 * Create new note
+* Open the existing note
 * List recent notes
 * Search notes by keywords
 * Synchronize note to git remote repository
@@ -127,7 +128,13 @@ $ git clone git@github.com:sjmyuan/idea-note.git
 
   ```sh
   $ idea
-  $ idea new
+  $ idea open
+  $ idea open <custom note name>
+  ```
+* Create new note
+
+  ```sh
+  $ idea open <existing note path> // the path can be found in `idea ls`
   ```
 
 * List recent notes
