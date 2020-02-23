@@ -102,11 +102,10 @@ sync(){
     exit 1
   fi
 
+  # check passphrase
   if [ -f $version_file ]
   then
     openssl enc -d -aes256 -base64 -pass pass:${password} -in $version_file > /dev/null
-  else
-    echo "first version" | openssl enc -aes256 -base64 -pass pass:${password} -out $version_file
   fi
 
   local files=""
@@ -115,7 +114,12 @@ sync(){
   local target_dir=""
 
   # local -> remote
-  files="$(cd $local && find . -newer $version_file -name '*.md' -print)"
+  if [ -f $version_file ]
+  then
+    files="$(cd $local && find . -newer $version_file -name '*.md' -print)"
+  else
+    files="$(cd $local && find . -name '*.md' -print)"
+  fi
 
   for file in $files
   do
