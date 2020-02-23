@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 usage(){
   echo "export IDEA_HOME=<path> $0 <open(default)|flush|ls|search>"
@@ -26,11 +26,12 @@ open_note(){
   local time=$(date '+%Y%m%dT%H%M%S')
   local note=$2
 
+  if [[ ! -d "$path/$today" ]]; then
+    mkdir -p "$path/$today"
+  fi
+
   if [[ "${note}" == "" ]]
   then
-    if [[ ! -d "$path/$today" ]]; then
-      mkdir -p "$path/$today"
-    fi
     note="$today/$time.md"
   else
     if [[ ! -f "$path/$note" ]]
@@ -47,16 +48,6 @@ open_note(){
   cd ${path} && $EDITOR "$path/$note"
 }
 
-flush(){
-  local path=$1
-  local time=$(date '+%Y-%m-%dT%H:%M:%S')
-  if [[ -d "$path/.git" ]]
-  then
-    cd "$path" && git add . && git commit -m "flush @${time}" && git push
-  else
-    echo "$path is not a git repo, can not run flush."
-  fi
-}
 
 recent(){
   local path=$1
@@ -87,25 +78,127 @@ search(){
   fi
 }
 
-if [[ "$IDEA_HOME" == "" ]]
+sync(){
+  local local=$1
+  local remote=$2
+  local password=""
+  local version_file="$remote/version.txt"
+
+  if [ ! -d $local ]
+  then
+    mkdir -p $local
+  fi
+
+  if [ ! -d $remote ]
+  then
+    mkdir -p $remote
+  fi
+
+  read -sp "Enter your passphrase: " password
+
+  if [ "$password" == "" ]
+  then
+    echo "The password can't be emtpy."
+    exit 1
+  fi
+
+  if [ -f $version_file ]
+  then
+    openssl enc -d -aes256 -base64 -pass pass:${password} -in $version_file > /dev/null
+  else
+    echo "first version" | openssl enc -aes256 -base64 -pass pass:${password} -out $version_file
+  fi
+
+  local files=""
+  local source_file=""
+  local target_file=""
+  local target_dir=""
+
+  # local -> remote
+  files="$(cd $local && find . -newer $version_file -name '*.md' -print)"
+
+  for file in $files
+  do
+    source_file=$(echo "$local/$file" | sed -E 's/\/\/?\.?\//\//')
+    target_file=$(echo "$remote/$file.enc" | sed -E 's/\/\/?\.?\//\//')
+    target_dir=$(dirname $target_file)
+    if [ ! -d $target_dir ]
+    then
+      mkdir -p $target_dir
+    fi
+    echo "Encrypting $source_file to $target_file"
+    openssl enc -aes256 -base64 -pass pass:${password} -in $source_file -out $target_file
+    cp $target_file $version_file
+  done
+
+  # remote -> local
+  files="$(cd $remote && find . -name '*.enc' -print)"
+
+  for file in $files
+  do
+    source_file=$(echo "$remote/$file" | sed -E 's/\/\/?\.?\//\//')
+    target_file=$(echo "$local/$file" | sed -E 's/.enc$//;s/\/\/?\.?\//\//')
+    if [ ! -f $target_file ]
+    then
+      target_dir=$(dirname $target_file)
+      if [ ! -d $target_dir ]
+      then
+        mkdir -p $target_dir
+      fi
+      echo "Decrypting $source_file to $target_file"
+      openssl enc -d -aes256 -base64 -pass pass:${password} -in $source_file -out $target_file
+      cp $source_file $version_file
+    fi
+  done
+}
+
+git_pull(){
+  local path=$1
+  if [[ -d "$path/.git" ]]
+  then
+    cd "$path" && git pull
+  else
+    echo "$path is not a git repo, can not pull data."
+  fi
+}
+
+git_push(){
+  local path=$1
+  local time=$(date '+%Y-%m-%dT%H:%M:%S')
+  if [[ -d "$path/.git" ]]
+  then
+    cd "$path" && git add . && git commit -m "sync @${time}" && git push
+  else
+    echo "$path is not a git repo, can not run flush."
+  fi
+}
+
+if [[ "$IDEA_LOCAL" == "" ]]
 then
-  IDEA_HOME="$HOME/.idea/"
+  IDEA_LOCAL="$HOME/.idea/local"
+fi
+
+if [[ "$IDEA_REMOTE" == "" ]]
+then
+  IDEA_REMOTE="$HOME/.idea/remote"
 fi
 
 COMMAND=${1-"open"}
 
-if [[ "$COMMAND" == "flush" ]]
+if [[ "$COMMAND" == "open" ]]
 then
-  flush "$IDEA_HOME"
-elif [[ "$COMMAND" == "open" ]]
-then
-  open_note "$IDEA_HOME" "$2"
+  open_note "$IDEA_LOCAL" "$2"
 elif [[ "$COMMAND" == "ls" ]]
 then
-  recent "$IDEA_HOME"
+  recent "$IDEA_LOCAL"
 elif [[ "$COMMAND" == "search" ]]
 then
-  search "$IDEA_HOME" "$2"
+  search "$IDEA_LOCAL" "$2"
+elif [[ "$COMMAND" == "git-sync" ]]
+then
+  git_pull "$IDEA_REMOTE" \
+    && sync "$IDEA_LOCAL" "$IDEA_REMOTE" \
+    && git_push "$IDEA_REMOTE"
 else
   usage
 fi
