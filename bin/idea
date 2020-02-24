@@ -1,4 +1,5 @@
 #!/bin/bash -e
+set -euo pipefail
 
 usage(){
   echo "export IDEA_HOME=<path> $0 <open(default)|flush|ls|search>"
@@ -82,7 +83,8 @@ sync(){
   local local=$1
   local remote=$2
   local password=""
-  local version_file="$remote/version.txt"
+  local remote_version_file="$remote/version.md.enc"
+  local local_version_file="$local/version.md"
 
   if [ ! -d $local ]
   then
@@ -98,14 +100,19 @@ sync(){
 
   if [ "$password" == "" ]
   then
-    echo "The password can't be emtpy."
+    echo "The passphrase can't be emtpy."
     exit 1
   fi
 
   # check passphrase
-  if [ -f $version_file ]
+  if [ -f $remote_version_file ]
   then
-    openssl enc -d -aes256 -base64 -pass pass:${password} -in $version_file > /dev/null
+    openssl enc -d -aes256 -base64 -pass pass:${password} -in $remote_version_file > /dev/null
+    if [ $? != 0 ]
+    then
+      echo "The passphrase is not correct."
+      exit 1
+    fi
   fi
 
   local files=""
@@ -114,9 +121,10 @@ sync(){
   local target_dir=""
 
   # local -> remote
-  if [ -f $version_file ]
+  if [ -f $local_version_file ]
   then
-    files="$(cd $local && find . -newer $version_file -name '*.md' -print)"
+    files="$(cd $local && find . -newer $local_version_file -name '*.md' -print)"
+    files="$files $(basename $local_version_file)"
   else
     files="$(cd $local && find . -name '*.md' -print)"
   fi
@@ -132,7 +140,7 @@ sync(){
     fi
     echo "Encrypting $source_file to $target_file"
     openssl enc -aes256 -base64 -pass pass:${password} -in $source_file -out $target_file
-    cp $target_file $version_file
+    cp $source_file $local_version_file
   done
 
   # remote -> local
@@ -151,7 +159,7 @@ sync(){
       fi
       echo "Decrypting $source_file to $target_file"
       openssl enc -d -aes256 -base64 -pass pass:${password} -in $source_file -out $target_file
-      cp $source_file $version_file
+      cp $target_file $local_version_file
     fi
   done
 }
