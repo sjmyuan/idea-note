@@ -119,7 +119,7 @@ list(){
   do
     if [[ -d "$local_directory/$folder" ]]
     then
-      files="$files $(cd $local_directory && ls -drt $folder/*)"
+      files="$files $(cd $local_directory && find $folder -name '*.md' -print)"
     fi
   done
 
