@@ -48,7 +48,7 @@ open(){
         exit 0
         ;;
       *)
-        note="$@"
+        note="$option $@"
         break
         ;;
     esac
@@ -150,7 +150,7 @@ search(){
         exit 0
         ;;
       *)
-        pattern="$@"
+        pattern="$option $@"
         break
         ;;
     esac
