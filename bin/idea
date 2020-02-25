@@ -32,6 +32,11 @@ open(){
     shift
     case $option in 
       --local)
+        if [ "$1" == "" ]
+        then
+          echo "The local directory can't be empty."
+          exit 1
+        fi
         local_directory=$1
         shift
         ;;
@@ -67,7 +72,7 @@ open(){
   else
     if [[ ! -f "$local_directory/$note" ]]
     then
-      note=$(echo $note|sed -e 's/ /-/')
+      note=$(echo $note|sed -e 's/ /-/g')
       if [[ ! $note =~ .*\.md$ ]]; then
         note="$today/$note.md"
       else
@@ -89,6 +94,11 @@ list(){
     shift
     case $option in
       --local)
+        if [ "$1" == "" ]
+        then
+          echo "The local directory can't be empty."
+          exit 1
+        fi
         local_directory=$1
         shift
         ;;
@@ -222,8 +232,8 @@ sync(){
 
   for file in $files
   do
-    source_file=$(echo "$local/$file" | sed -E 's/\/\/?\.?\//\//')
-    target_file=$(echo "$remote/$file.enc" | sed -E 's/\/\/?\.?\//\//')
+    source_file=$(echo "$local/$file" | sed -E 's/\/\/?\.?\//\//g')
+    target_file=$(echo "$remote/$file.enc" | sed -E 's/\/\/?\.?\//\//g')
     target_dir=$(dirname $target_file)
     if [ ! -d $target_dir ]
     then
@@ -239,8 +249,8 @@ sync(){
 
   for file in $files
   do
-    source_file=$(echo "$remote/$file" | sed -E 's/\/\/?\.?\//\//')
-    target_file=$(echo "$local/$file" | sed -E 's/.enc$//;s/\/\/?\.?\//\//')
+    source_file=$(echo "$remote/$file" | sed -E 's/\/\/?\.?\//\//g')
+    target_file=$(echo "$local/$file" | sed -E 's/.enc$//;s/\/\/?\.?\//\//g')
     if [ ! -f $target_file ]
     then
       target_dir=$(dirname $target_file)
@@ -287,10 +297,20 @@ git_sync(){
     shift
     case $option in 
       --local)
+        if [ "$1" == "" ]
+        then
+          echo "The local directory can't be empty."
+          exit 1
+        fi
         local_directory=$1
         shift
         ;;
       --remote)
+        if [ "$1" == "" ]
+        then
+          echo "The remote directory can't be empty."
+          exit 1
+        fi
         remote_directory=$1
         shift
         ;;

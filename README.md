@@ -8,10 +8,6 @@ you can support box, s3 or google drive easily by some other tools.
 
 Notes: Only MacOS and Neovim have been tested for now.
 
-![](https://tva1.sinaimg.cn/large/0082zybply1gbqavnj5w2g30dc0ace81.gif)
-
-![](https://tva1.sinaimg.cn/large/0082zybply1gbqavszdd0g30dc0ac4qq.gif)
-
 ## Table of Contents
 
 * [Motivation](#motivation)
@@ -41,6 +37,7 @@ Notes: Only MacOS and Neovim have been tested for now.
 * List recent notes
 * Search notes by keywords
 * Synchronize note to git remote repository
+* Encrypt note
 
 ### Vim Plugin
 
@@ -71,19 +68,27 @@ $ git clone git@github.com:sjmyuan/idea-note.git
    export PATH="<directory>/bin:$PATH"
    ```
 
-3. Configure `IDEA_HOME` to be the directory in which you want to store your notes. 
+3. Configure `IDEA_LOCAL` to be the directory in which you want to store your decrypted notes. 
 
-   If you want `idea-note` to support the git synchronization, the directory should be a git repository.
-   The default value of `IDEA_HOME` is `$HOME/.idea/`
+   The default value of `IDEA_LOCAL` is `$HOME/.idea/local`
 
    ```sh
-   export IDEA_HOME=<note directory>
+   export IDEA_LOCAL=<note directory>
    ```
 
-4. Check if the `idea` command can work 
+4. Configure `IDEA_REMOTE` to be the directory in which you want to store your encrypted notes. 
+
+   If you want `idea-note` to support the git synchronization, the directory should be a git repository.
+   The default value of `IDEA_REMOTE` is `$HOME/.idea/remote`
 
    ```sh
-   $ idea
+   export IDEA_REMOTE=<note directory>
+   ```
+
+5. Check if the `idea` command can work 
+
+   ```sh
+   $ idea help
    ```
 
 ### Vim Plugin
@@ -107,10 +112,10 @@ $ git clone git@github.com:sjmyuan/idea-note.git
     Plug '<idea-note repository directory>'
     ```
 
-4. Configure the notes directory, if you already installed the cli, can use `$IDEA_HOME` directly.
+4. Configure the notes directory, if you already installed the cli, can use `$IDEA_LOCAL` directly.
 
     ```sh
-    let g:idea#home = $IDEA_HOME
+    let g:idea#local = $IDEA_LOCAL
     ```
 
 5. Check if the `:Idea` command can work 
@@ -124,14 +129,20 @@ $ git clone git@github.com:sjmyuan/idea-note.git
 
 ### CLI
 
+* Browse help message
+
+  ```sh
+  $ idea help
+  $ idea <command> help
+  ```
+
 * Create new note
 
   ```sh
-  $ idea
   $ idea open
   $ idea open <custom note name>
   ```
-* Create new note
+* Open new note
 
   ```sh
   $ idea open <existing note path> // the path can be found in `idea ls`
@@ -152,7 +163,7 @@ $ git clone git@github.com:sjmyuan/idea-note.git
 * Synchronize notes to git remote repo
 
   ```sh
-  $ idea flush
+  $ idea git-sync
   ```
 
 ### Vim Plugin
