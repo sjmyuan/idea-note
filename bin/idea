@@ -6,7 +6,7 @@ usage(){
   echo ""
   echo "COMMANDS"
   echo "  open              create a new note or open the existion note"
-  echo "  git-syc           flush all the notes to git"
+  echo "  git-sync           flush all the notes to git"
   echo "  ls                list all the notes in 3 days"
   echo "  search <pattern>  serach all the notes which match the given pattern"
 }
@@ -326,7 +326,7 @@ git_sync(){
         echo "OPTIONS"
         echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
         echo "  --remote  Specify the remote notes directory explicitly, will use environment variable IDEA_REMOTE if missing."
-        eixt 0
+        exit 0
         ;;
       *)
         echo "Invalid option $option"
@@ -362,7 +362,7 @@ then
       list $@
       ;;
     git-sync)
-      git_sync
+      git_sync $@
       ;;
     search)
       search $@
