@@ -1,13 +1,14 @@
 #!/bin/bash -e
-set -euo pipefail
+set -eo pipefail
 
 usage(){
-  echo "export IDEA_HOME=<path> $0 <open(default)|flush|ls|search>"
+  echo "usage: $0 <command> [<args>] "
   echo ""
-  echo "  open [note]     create a new note or open the existion note"
-  echo "  flush           flush all the notes to git"
-  echo "  ls              list all the notes in 3 days"
-  echo "  search <value>  serach all the notes which contain the given value"
+  echo "COMMANDS"
+  echo "  open              create a new note or open the existion note"
+  echo "  git-syc           flush all the notes to git"
+  echo "  ls                list all the notes in 3 days"
+  echo "  search <pattern>  serach all the notes which match the given pattern"
 }
 
 colorful_output_files(){
@@ -21,21 +22,50 @@ colorful_output_files(){
   done
 }
 
-open_note(){
-  local path=$1
+open(){
+  local local_directory=$IDEA_LOCAL
+  local note=""
+
+  while [[ $# -gt 0 ]]
+  do
+    local option=$1
+    shift
+    case $option in 
+      --local)
+        local_directory=$1
+        shift
+        ;;
+      help)
+        echo "open [--local <value>] [<note name>]"
+        echo ""
+        echo "DESCRIPTION"
+        echo "  1. If the note name is not given, create a new note with random name."
+        echo "  2. If the note name is given and the note exists, open the corresponding note."
+        echo "  3. If the note name is given but the note does not exists, open a new note with the given name."
+        echo ""
+        echo "OPTIONS"
+        echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
+        exit 0
+        ;;
+      *)
+        note="$@"
+        break
+        ;;
+    esac
+  done
+
   local today=$(date '+%Y-%m-%d')
   local time=$(date '+%Y%m%dT%H%M%S')
-  local note=$2
 
-  if [[ ! -d "$path/$today" ]]; then
-    mkdir -p "$path/$today"
+  if [[ ! -d "$local_directory/$today" ]]; then
+    mkdir -p "$local_directory/$today"
   fi
 
   if [[ "${note}" == "" ]]
   then
     note="$today/$time.md"
   else
-    if [[ ! -f "$path/$note" ]]
+    if [[ ! -f "$local_directory/$note" ]]
     then
       note=$(echo $note|sed -e 's/ /-/')
       if [[ ! $note =~ .*\.md$ ]]; then
@@ -46,12 +76,40 @@ open_note(){
     fi
   fi
 
-  cd ${path} && $EDITOR "$path/$note"
+  cd ${local_directory} && $EDITOR "$local_directory/$note"
 }
 
 
-recent(){
-  local path=$1
+list(){
+  local local_directory=$IDEA_LOCAL
+
+  while [[ $# -gt 0 ]]
+  do
+    local option=$1
+    shift
+    case $option in
+      --local)
+        local_directory=$1
+        shift
+        ;;
+      help)
+        echo "ls [--local <value>]"
+        echo ""
+        echo "DESCRIPTION"
+        echo "  Print all the content of notes created in 3 days."
+        echo ""
+        echo "OPTIONS"
+        echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
+        exit 0
+        ;;
+      *)
+        echo "Invalid option $option"
+        exit 1
+        ;;
+    esac
+  done
+
+
   local today=$(date '+%Y-%m-%d')
   local yesterday=$(date -v-1d '+%Y-%m-%d')
   local the_day_before_yesterday=$(date -v-2d '+%Y-%m-%d')
@@ -59,23 +117,56 @@ recent(){
 
   for folder in $the_day_before_yesterday $yesterday $today
   do
-    if [[ -d "$path/$folder" ]]
+    if [[ -d "$local_directory/$folder" ]]
     then
-      files="$files $(cd $path && ls -drt $folder/*)"
+      files="$files $(cd $local_directory && ls -drt $folder/*)"
     fi
   done
 
-  cd $path && colorful_output_files "$files"
+  cd $local_directory && colorful_output_files "$files"
 }
 
 search(){
-  local path=$1
-  local pattern=$2
-  local files=$(cd "$path" && ag -l $pattern . | tr '\n' ' ')
+  local local_directory=$IDEA_LOCAL
+  local pattern=""
+
+  while [[ $# -gt 0 ]]
+  do
+    local option=$1
+    shift
+    case $option in 
+      --local)
+        local_directory=$1
+        shift
+        ;;
+      help)
+        echo "search [--local <value>] <pattern>"
+        echo ""
+        echo "DESCRIPTION"
+        echo "  Print all the notes which contain the given pattern."
+        echo ""
+        echo "OPTIONS"
+        echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
+        exit 0
+        ;;
+      *)
+        pattern="$@"
+        break
+        ;;
+    esac
+  done
+
+  if [ "$pattern" == "" ]
+  then
+    echo "pattern should not be empty."
+    exit 1
+  fi
+
+  local files=$(cd "$local_directory" && ag -l $pattern . | tr '\n' ' ')
 
   if [[ "$files" != "" ]]
   then
-    cd $path && colorful_output_files "$files"
+    cd $local_directory && colorful_output_files "$files"
   fi
 }
 
@@ -185,6 +276,50 @@ git_push(){
   fi
 }
 
+git_sync(){
+
+  local local_directory=$IDEA_LOCAL
+  local remote_directory=$IDEA_REMOTE
+
+  while [[ $# -gt 0 ]]
+  do
+    local option=$1
+    shift
+    case $option in 
+      --local)
+        local_directory=$1
+        shift
+        ;;
+      --remote)
+        remote_directory=$1
+        shift
+        ;;
+      help)
+        echo "git-sync [--local <value>] [--remote <value>]"
+        echo ""
+        echo "DESCRIPTION"
+        echo "  The workflow of git sync"
+        echo "    1. Featch the latest notes from remote repo by git pull"
+        echo "    2. Encrypt the notes which is newer than the version.md in local directory, then copy them to the corresponding remote directory"
+        echo "    3. Decrypt the notes which don't exist in local directory, then copy them to the corresponding local directory"
+        echo ""
+        echo "OPTIONS"
+        echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
+        echo "  --remote  Specify the remote notes directory explicitly, will use environment variable IDEA_REMOTE if missing."
+        eixt 0
+        ;;
+      *)
+        echo "Invalid option $option"
+        exit 1
+        ;;
+    esac
+  done
+
+  git_pull "$remote_directory" \
+    && sync "$local_directory" "$remote_directory" \
+    && git_push "$remote_directory"
+  }
+
 if [[ "$IDEA_LOCAL" == "" ]]
 then
   IDEA_LOCAL="$HOME/.idea/local"
@@ -195,22 +330,32 @@ then
   IDEA_REMOTE="$HOME/.idea/remote"
 fi
 
-COMMAND=${1-"open"}
-
-if [[ "$COMMAND" == "open" ]]
+if [ $# -gt 0 ]
 then
-  open_note "$IDEA_LOCAL" "$2"
-elif [[ "$COMMAND" == "ls" ]]
-then
-  recent "$IDEA_LOCAL"
-elif [[ "$COMMAND" == "search" ]]
-then
-  search "$IDEA_LOCAL" "$2"
-elif [[ "$COMMAND" == "git-sync" ]]
-then
-  git_pull "$IDEA_REMOTE" \
-    && sync "$IDEA_LOCAL" "$IDEA_REMOTE" \
-    && git_push "$IDEA_REMOTE"
+  COMMAND="$1"
+  shift
+  case $COMMAND in
+    open)
+      open $@
+      ;;
+    ls)
+      list $@
+      ;;
+    git-sync)
+      git_sync
+      ;;
+    search)
+      search $@
+      ;;
+    help)
+      usage
+      ;;
+    *)
+      usage
+      exit 1
+      ;;
+  esac
 else
   usage
+  exit 1
 fi
