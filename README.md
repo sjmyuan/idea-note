@@ -42,6 +42,7 @@ Notes: Only MacOS and Neovim have been tested for now.
 ### Vim Plugin
 
 * Create new note
+* Open the existing note
 * Search notes by keywords
 
 ## Installation(MacOS)
@@ -118,10 +119,10 @@ $ git clone git@github.com:sjmyuan/idea-note.git
     let g:idea#local = $IDEA_LOCAL
     ```
 
-5. Check if the `:Idea` command can work 
+5. Check if the `:IdeaOpen` command can work
 
     ```sh
-    :Idea
+    :IdeaOpen
     ```
 
 ## Usage
@@ -142,7 +143,7 @@ $ git clone git@github.com:sjmyuan/idea-note.git
   $ idea open
   $ idea open <custom note name>
   ```
-* Open new note
+* Open existing note
 
   ```sh
   $ idea open <existing note path> // the path can be found in `idea ls`
@@ -171,12 +172,18 @@ $ git clone git@github.com:sjmyuan/idea-note.git
 * Create new note
 
   ```sh
-  :Idea
+  :IdeaOpen
+  :IdeaOpen <custom note name>
+  ```
+* Open existing note
+
+  ```sh
+  :IdeaOpen <existing note path> // the path can be found in `idea ls`
   ```
 
 * Search notes
 
   ```sh
-  :Idea <pattern>
+  :IdeaSearch <pattern>
   ```
 

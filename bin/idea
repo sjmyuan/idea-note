@@ -6,7 +6,7 @@ usage(){
   echo ""
   echo "COMMANDS"
   echo "  open              create a new note or open the existion note"
-  echo "  git-sync           flush all the notes to git"
+  echo "  git-sync          flush all the notes to git"
   echo "  ls                list all the notes in 3 days"
   echo "  search <pattern>  serach all the notes which match the given pattern"
 }
@@ -24,6 +24,8 @@ colorful_output_files(){
 
 open(){
   local local_directory=$IDEA_LOCAL
+  local append_content=""
+  local content_source=""
   local note=""
 
   while [[ $# -gt 0 ]]
@@ -40,8 +42,33 @@ open(){
         local_directory=$1
         shift
         ;;
+      --file)
+        if [ "$content_source" != "" ]
+        then
+          echo "--file can't be used together with $content_source."
+          exit 1
+        fi
+
+        if [ ! -f $1 ]
+        then
+          echo "$1 doesn't exist."
+          exit 1
+        fi
+        content_source="--file"
+        append_content="$(cd "$(dirname "$1")" && pwd -P)/$(basename "$1")"
+        shift
+        ;;
+      --stdin)
+        if [ "$content_source" != "" ]
+        then
+          echo "--stdin can't be used together with $source."
+          exit 1
+        fi
+        content_source="--stdin"
+        read append_content
+        ;;
       help)
-        echo "open [--local <value>] [<note name>]"
+        echo "open [--local <value>] [--file <value>|--stdin] [<note name>]"
         echo ""
         echo "DESCRIPTION"
         echo "  1. If the note name is not given, create a new note with random name."
@@ -50,6 +77,8 @@ open(){
         echo ""
         echo "OPTIONS"
         echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
+        echo "  --file    Append the file content to the note"
+        echo "  --stdin   Append the stdin to the note"
         exit 0
         ;;
       *)
@@ -81,7 +110,15 @@ open(){
     fi
   fi
 
-  cd ${local_directory} && $EDITOR "$local_directory/$note"
+  if [[ "$content_source" == "--stdin" ]]
+  then
+    cd ${local_directory} && echo $append_content >> $note && $EDITOR $note
+  elif [[ "$content_source" == "--file" ]]
+  then
+    cd ${local_directory} && cat $append_content >> $note && $EDITOR $note
+  else
+    cd ${local_directory} && $EDITOR $note
+  fi
 }
 
 
