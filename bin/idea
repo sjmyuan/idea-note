@@ -25,6 +25,7 @@ colorful_output_files(){
 open(){
   local local_directory=$IDEA_LOCAL
   local append_content=""
+  local content_source=""
   local note=""
 
   while [[ $# -gt 0 ]]
@@ -42,9 +43,9 @@ open(){
         shift
         ;;
       --file)
-        if [ "$source" != "" ]
+        if [ "$content_source" != "" ]
         then
-          echo "--file can't be used together with $source."
+          echo "--file can't be used together with $content_source."
           exit 1
         fi
 
@@ -53,17 +54,17 @@ open(){
           echo "$1 doesn't exist."
           exit 1
         fi
-        source="--file"
-        append_content=$(cat $1)
+        content_source="--file"
+        append_content="$(cd "$(dirname "$1")" && pwd -P)/$(basename "$1")"
         shift
         ;;
       --stdin)
-        if [ "$source" != "" ]
+        if [ "$content_source" != "" ]
         then
           echo "--stdin can't be used together with $source."
           exit 1
         fi
-        source="--stdin"
+        content_source="--stdin"
         read append_content
         ;;
       help)
@@ -109,9 +110,12 @@ open(){
     fi
   fi
 
-  if [[ "$append_content" != "" ]]
+  if [[ "$content_source" == "--stdin" ]]
   then
     cd ${local_directory} && echo $append_content >> $note && $EDITOR $note
+  elif [[ "$content_source" == "--file" ]]
+  then
+    cd ${local_directory} && cat $append_content >> $note && $EDITOR $note
   else
     cd ${local_directory} && $EDITOR $note
   fi
