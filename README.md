@@ -54,7 +54,7 @@ Notes: Only MacOS and Neovim have been tested for now.
 ### Homebrew
 
 ```sh
-brew tap sjmyuan/idea-note ssh://git@github.com:sjmyuan/idea-note.git
+brew tap sjmyuan/idea-note git://github.com/sjmyuan/idea-note.git
 brew install idea-note
 brew untap sjmyuan/idea-note
 ```
