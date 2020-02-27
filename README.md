@@ -15,8 +15,12 @@ Notes: Only MacOS and Neovim have been tested for now.
   * [CLI](#cli)
   * [Vim Plugin](#vim-plugin)
 * [Installation(MacOS)](#installationmacos)
-  * [CLI](#cli-1)
-  * [Vim Plugin](#vim-plugin-1)
+  * [Homebrew](#homebrew)
+    * [CLI](#cli-1)
+    * [Vim Plugin](#vim-plugin-1)
+  * [Git Repo](#git-repo)
+    * [CLI](#cli-2)
+    * [Vim Plugin](#vim-plugin-2)
 * [Usage](#usage)
   * [CLI](#cli-2)
   * [Vim Plugin](#vim-plugin-2)
@@ -47,13 +51,81 @@ Notes: Only MacOS and Neovim have been tested for now.
 
 ## Installation(MacOS)
 
+### Homebrew
+
+```sh
+brew tap sjmyuan/idea-note ssh://git@github.com:sjmyuan/idea-note.git
+brew install idea-note
+brew untap sjmyuan/idea-note
+```
+
+#### CLI
+
+1. Configure `IDEA_LOCAL` to be the directory in which you want to store your decrypted notes. 
+
+   The default value of `IDEA_LOCAL` is `$HOME/.idea/local`
+
+   ```sh
+   export IDEA_LOCAL=<note directory>
+   ```
+
+2. Configure `IDEA_REMOTE` to be the directory in which you want to store your encrypted notes. 
+
+   If you want `idea-note` to support the git synchronization, the directory should be a git repository.
+   The default value of `IDEA_REMOTE` is `$HOME/.idea/remote`
+
+   ```sh
+   export IDEA_REMOTE=<note directory>
+   ```
+
+3. Check if the `idea` command can work 
+
+   ```sh
+   $ idea help
+   ```
+
+#### Vim Plugin
+
+1. Install [fzf](https://github.com/junegunn/fzf)
+
+    ```sh
+    $ brew install fzf
+    ```
+
+2. Install the dependencies in vimrc, we use [Plug](https://github.com/junegunn/vim-plug) as pulgin manager here.
+
+    ```sh
+    Plug '/usr/local/opt/fzf'
+    Plug 'junegunn/fzf.vim'
+    ```
+
+3. Install the plugin of `idea-note`
+
+    ```sh
+    Plug '/usr/local/opt/idea-note'
+    ```
+
+4. Configure the notes directory, if you already installed the cli, can use `$IDEA_LOCAL` directly.
+
+    ```sh
+    let g:idea#local = $IDEA_LOCAL
+    ```
+
+5. Check if the `:IdeaOpen` command can work
+
+    ```sh
+    :IdeaOpen
+    ```
+
+### Git Repo
+
 First of all, clone the repo to your local environment
 
 ```sh
 $ git clone git@github.com:sjmyuan/idea-note.git
 ```
 
-### CLI
+#### CLI
 
 1. Install the dependencies
 
@@ -92,7 +164,7 @@ $ git clone git@github.com:sjmyuan/idea-note.git
    $ idea help
    ```
 
-### Vim Plugin
+#### Vim Plugin
 
 1. Install [fzf](https://github.com/junegunn/fzf)
 
