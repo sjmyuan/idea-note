@@ -18,7 +18,7 @@ colorful_output_files(){
   for file in $files
   do
     echo -e "${GREEN}==> idea open ${file} <==${NOCOLOR}"
-    cat $file
+    head -n 5 $file
   done
 }
 
@@ -99,7 +99,7 @@ open(){
   then
     note="$today/$time.md"
   else
-    if [[ ! -f "$local_directory/$note" ]]
+    if [ ! -f $local_directory/$note ]
     then
       note=$(echo $note|sed -e 's/ /-/g')
       if [[ ! $note =~ .*\.md$ ]]; then
