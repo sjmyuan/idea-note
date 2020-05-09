@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 set -eo pipefail
 
 usage(){
@@ -9,6 +9,7 @@ usage(){
   echo "  git-sync          flush all the notes to git"
   echo "  ls                list all the notes in 3 days"
   echo "  search <pattern>  serach all the notes which match the given pattern"
+  echo "  goto              goto the given project folder"
 }
 
 colorful_output_files(){
@@ -173,6 +174,50 @@ list(){
   done
 
   cd $local_directory && colorful_output_files "$files"
+}
+
+goto_project(){
+  local local_directory=$IDEA_LOCAL
+  local project=$(date '+%Y-%m-%d')
+
+  while [[ $# -gt 0 ]]
+  do
+    local option=$1
+    shift
+    case $option in
+      --local)
+        if [ "$1" == "" ]
+        then
+          echo "The local directory can't be empty."
+          exit 1
+        fi
+        local_directory=$1
+        shift
+        ;;
+      help)
+        echo "goto [--local <value>] <project name>"
+        echo ""
+        echo "DESCRIPTION"
+        echo "  Go to the given project folder, if it doesn't exist, create one."
+        echo ""
+        echo "OPTIONS"
+        echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
+        exit 0
+        ;;
+      *)
+        project="$option $@"
+        project=$(echo $project|sed -e 's/ /-/g')
+        break
+        ;;
+    esac
+  done
+
+  if [ ! -d $local_directory/$project ]
+  then
+    mkdir -p "$local_directory/$project"
+  fi
+
+  cd $local_directory/$project
 }
 
 search(){
@@ -399,6 +444,9 @@ then
       ;;
     ls)
       list $@
+      ;;
+    goto)
+      goto_project $@
       ;;
     git-sync)
       git_sync $@
