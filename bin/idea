@@ -27,6 +27,7 @@ open(){
   local append_content=""
   local content_source=""
   local note=""
+  local project=$(date '+%Y-%m-%d')
 
   while [[ $# -gt 0 ]]
   do
@@ -66,6 +67,11 @@ open(){
         fi
         content_source="--stdin"
         read append_content
+        shift
+        ;;
+      --project)
+        project="$1"
+        shift
         ;;
       help)
         echo "open [--local <value>] [--file <value>|--stdin] [<note name>]"
@@ -79,6 +85,7 @@ open(){
         echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
         echo "  --file    Append the file content to the note"
         echo "  --stdin   Append the stdin to the note"
+        echo "  --project Create note in the given project folder, default is the date of today"
         exit 0
         ;;
       *)
@@ -88,21 +95,20 @@ open(){
     esac
   done
 
-  local today=$(date '+%Y-%m-%d')
   local time=$(date '+%Y%m%dT%H%M%S')
 
-  if [[ ! -d "$local_directory/$today" ]]; then
-    mkdir -p "$local_directory/$today"
+  if [[ ! -d "$local_directory/$project" ]]; then
+    mkdir -p "$local_directory/$project"
   fi
 
   if [[ "${note}" == "" ]]
   then
-    note="$today/$time.md"
+    note="$project/$time.md"
   else
     if [ ! -f $local_directory/$note ]
     then
       note=$(echo $note|sed -e 's/ /-/g')
-      note="$today/$note"
+      note="$project/$note"
     fi
   fi
 
