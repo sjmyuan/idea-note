@@ -102,11 +102,7 @@ open(){
     if [ ! -f $local_directory/$note ]
     then
       note=$(echo $note|sed -e 's/ /-/g')
-      if [[ ! $note =~ .*\.md$ ]]; then
-        note="$today/$note.md"
-      else
-        note="$today/$note"
-      fi
+      note="$today/$note"
     fi
   fi
 
@@ -166,7 +162,7 @@ list(){
   do
     if [[ -d "$local_directory/$folder" ]]
     then
-      files="$files $(cd $local_directory && find $folder -name '*.md' -print)"
+      files="$files $(cd $local_directory && find $folder -not -path '.*/\.*' -type f -print)"
     fi
   done
 
@@ -261,10 +257,10 @@ sync(){
   # local -> remote
   if [ -f $local_version_file ]
   then
-    files="$(cd $local && find . -newer $local_version_file -name '*.md' -print)"
+    files="$(cd $local && find . -newer $local_version_file -not -path '.*/\.*' -type f -print)"
     files="$files $(basename $local_version_file)"
   else
-    files="$(cd $local && find . -name '*.md' -print)"
+    files="$(cd $local && find . -not -path '.*/\.*' -type f -print)"
   fi
 
   for file in $files
@@ -282,7 +278,7 @@ sync(){
   done
 
   # remote -> local
-  files="$(cd $remote && find . -name '*.enc' -print)"
+  files="$(cd $remote && find . -not -path '.*/\.*' -type f -name '*.enc' -print)"
 
   for file in $files
   do
