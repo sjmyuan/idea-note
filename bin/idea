@@ -199,6 +199,8 @@ goto_project(){
         echo ""
         echo "DESCRIPTION"
         echo "  Go to the given project folder, if it doesn't exist, create one."
+        echo "  This command will create a subshell working on project folder."
+        echo "  You can exit project by type exit."
         echo ""
         echo "OPTIONS"
         echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
@@ -217,7 +219,7 @@ goto_project(){
     mkdir -p "$local_directory/$project"
   fi
 
-  cd $local_directory/$project
+  cd $local_directory/$project && exec $SHELL
 }
 
 search(){
