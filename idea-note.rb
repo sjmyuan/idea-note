@@ -7,7 +7,7 @@ class IdeaNote < Formula
   VERSION = "0.0.4"
   version VERSION
   url "https://github.com/sjmyuan/idea-note/archive/#{VERSION}.zip"
-  sha256 "16bfb0d864c15aa11bf2057a67244a6f673951d3dad33d2f685cbdf8adaa7446"
+  sha256 "edb44b089bb1f52651970d27faae10df4a8a9e677cc909138f40c0fa947c799c"
 
   bottle :unneeded
 
