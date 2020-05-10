@@ -58,7 +58,7 @@ add(){
         exit 0
         ;;
       *)
-        source_file="$option $@"
+        source_file="$option"
         if [ ! -f $source_file ]
         then
           echo "$source_file doesn't exist."
@@ -261,7 +261,7 @@ goto_project(){
         ;;
       *)
         project="$option $@"
-        project=$(echo $project|sed -e 's/ /-/g')
+        project=$(echo $project|sed -e 's/ $//g'|sed -e 's/ /-/g')
         break
         ;;
     esac
@@ -308,7 +308,7 @@ search(){
         exit 0
         ;;
       *)
-        pattern="$option $@"
+        pattern="$option"
         break
         ;;
     esac
