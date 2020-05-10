@@ -146,7 +146,7 @@ list(){
         echo "ls [--local <value>]"
         echo ""
         echo "DESCRIPTION"
-        echo "  Print all the content of notes created in 3 days."
+        echo "  Print all the content of notes modified in 3 days."
         echo ""
         echo "OPTIONS"
         echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
@@ -160,18 +160,7 @@ list(){
   done
 
 
-  local today=$(date '+%Y-%m-%d')
-  local yesterday=$(date -v-1d '+%Y-%m-%d')
-  local the_day_before_yesterday=$(date -v-2d '+%Y-%m-%d')
-  local files=""
-
-  for folder in $the_day_before_yesterday $yesterday $today
-  do
-    if [[ -d "$local_directory/$folder" ]]
-    then
-      files="$files $(cd $local_directory && find $folder -not -path '.*/\.*' -type f -print)"
-    fi
-  done
+  local files=$(cd $local_directory && find . -not -path '.*/\.*' -type f -newerct '3 day ago' -print|sed -e 's/^\.\///g')
 
   cd $local_directory && colorful_output_files "$files"
 }
