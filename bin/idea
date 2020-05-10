@@ -84,6 +84,7 @@ open(){
   local content_source=""
   local note=""
   local project=$(date '+%Y-%m-%d')
+  local dry_run=0
 
   while [[ $# -gt 0 ]]
   do
@@ -129,8 +130,11 @@ open(){
         project="$1"
         shift
         ;;
+      --dry-run)
+        dry_run=1
+        ;;
       help)
-        echo "open [--local <value>] [--file <value>|--stdin|--project <value>] [<note name>]"
+        echo "open [--local <value>] [--dry-run] [--file <value>|--stdin|--project <value>] [<note name>]"
         echo ""
         echo "DESCRIPTION"
         echo "  1. If the note name is not given, create a new note with random name."
@@ -142,10 +146,11 @@ open(){
         echo "  --file    Append the file content to the note"
         echo "  --stdin   Append the stdin to the note"
         echo "  --project Create note in the given project folder, default is the date of today"
+        echo "  --dry-run Only print the path of note, won't create or open the note"
         exit 0
         ;;
       *)
-        note="$option $@"
+        note=$(echo "$option $@"|sed -e 's/ /-/g')
         break
         ;;
     esac
@@ -163,19 +168,23 @@ open(){
   else
     if [ ! -f $local_directory/$note ]
     then
-      note=$(echo $note|sed -e 's/ /-/g')
       note="$project/$note"
     fi
   fi
 
-  if [[ "$content_source" == "--stdin" ]]
+  if [[ $dry_run == 1 ]]
   then
-    cd ${local_directory} && echo $append_content >> $note && $EDITOR $note
-  elif [[ "$content_source" == "--file" ]]
-  then
-    cd ${local_directory} && cat $append_content >> $note && $EDITOR $note
+    echo $local_directory/$note
   else
-    cd ${local_directory} && $EDITOR $note
+    if [[ "$content_source" == "--stdin" ]]
+    then
+      cd ${local_directory} && echo $append_content >> $note && $EDITOR $note
+    elif [[ "$content_source" == "--file" ]]
+    then
+      cd ${local_directory} && cat $append_content >> $note && $EDITOR $note
+    else
+      cd ${local_directory} && $EDITOR $note
+    fi
   fi
 }
 

@@ -8,22 +8,20 @@ function! idea#normalize_path(path)
   return replace_double_back_slash
 endfunction
 
-function! idea#open(file) abort
-  let today = strftime('%Y-%m-%d')
-  let work_dir = g:idea#local.today.'/'
-  let today_with_time = strftime('%Y%m%dT%H%M%S.md')
-  let idea_file = work_dir.today_with_time
+function! idea#open(...) abort
+  let command = '/Users/jiaming.shang/personal/work/idea-note/bin/idea open --dry-run'
 
-  if !isdirectory(work_dir)
-    call mkdir(work_dir, "p")
-  endif
+  for x in a:000
+    let command = command.' '.x
+  endfor
 
-  if a:file != ''
-    let idea_file=work_dir.'/'.a:file
-  endif
+  echo command
 
-  execute ":e" idea#normalize_path(idea_file)
+  let file = system(command)
 
+  echo file
+
+  execute ":e" idea#normalize_path(file)
 endfunction
 
 function! idea#search(query) abort
@@ -38,5 +36,5 @@ function! idea#search(query) abort
   endif
 endfunction
 
-command! -nargs=* IdeaOpen :call idea#open(<q-args>)
+command! -nargs=* IdeaOpen :call idea#open(<f-args>)
 command! -nargs=+ IdeaSearch :call idea#search(<q-args>)
