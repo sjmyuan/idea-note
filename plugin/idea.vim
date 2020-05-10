@@ -15,11 +15,7 @@ function! idea#open(...) abort
     let command = command.' '.x
   endfor
 
-  echo command
-
   let file = system(command)
-
-  echo file
 
   execute ":e" idea#normalize_path(file)
 endfunction
