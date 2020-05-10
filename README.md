@@ -36,16 +36,22 @@ Notes: Only MacOS and Neovim have been tested for now.
 
 ### CLI
 
-* Create new note
+* Create new note in default project
+* Create new note in custom project
+* Go to given project folder
 * Open the existing note
+* Add existing file to idea-note
 * List recent notes
 * Search notes by keywords
+* Search note name by keywords
+* Search project name by keywords
 * Synchronize note to git remote repository
 * Encrypt note
 
 ### Vim Plugin
 
-* Create new note
+* Create new note in default project
+* Create new note in custom project
 * Open the existing note
 * Search notes by keywords
 
@@ -209,16 +215,37 @@ $ git clone git@github.com:sjmyuan/idea-note.git
   $ idea <command> help
   ```
 
-* Create new note
+* Create new note in default project
 
   ```sh
   $ idea open
   $ idea open <custom note name>
   ```
+
+* Create new note in custom project
+
+  ```sh
+  $ idea open --project demo
+  $ idea open --project demo <custom note name>
+  ```
+
 * Open existing note
 
   ```sh
   $ idea open <existing note path> // the path can be found in `idea ls`
+  ```
+
+* Add existing file to idea
+
+  ```sh
+  $ idea add <existing file>
+  $ idea add --project <project name> <existing file>
+  ```
+
+* Go to given project folder
+
+  ```sh
+  $ idea goto <project name> // the path can be found in `idea ls`
   ```
 
 * List recent notes
@@ -233,6 +260,18 @@ $ git clone git@github.com:sjmyuan/idea-note.git
   $ idea search <pattern>
   ```
 
+* Search note name by keywods
+
+  ```sh
+  $ idea search --file <pattern>
+  ```
+
+* Search project name by keywods
+
+  ```sh
+  $ idea search --project <pattern>
+  ```
+
 * Synchronize notes to git remote repo
 
   ```sh
@@ -241,12 +280,20 @@ $ git clone git@github.com:sjmyuan/idea-note.git
 
 ### Vim Plugin
 
-* Create new note
+* Create new note in default project
 
   ```sh
   :IdeaOpen
   :IdeaOpen <custom note name>
   ```
+
+* Create new note in custom project
+
+  ```sh
+  :IdeaOpen --project <project name>
+  :IdeaOpen --project <project name> <custom note name>
+  ```
+
 * Open existing note
 
   ```sh
