@@ -23,6 +23,61 @@ colorful_output_files(){
   done
 }
 
+add(){
+  local local_directory=$IDEA_LOCAL
+  local project=$(date '+%Y-%m-%d')
+  local source_file=""
+
+  while [[ $# -gt 0 ]]
+  do
+    local option=$1
+    shift
+    case $option in 
+      --local)
+        if [ "$1" == "" ]
+        then
+          echo "The local directory can't be empty."
+          exit 1
+        fi
+        local_directory=$1
+        shift
+        ;;
+      --project)
+        project="$1"
+        shift
+        ;;
+      help)
+        echo "add [--local <value>] [--project <value>] <file path>"
+        echo ""
+        echo "DESCRIPTION"
+        echo "  Add the file to given project, the default project is the date of today"
+        echo ""
+        echo "OPTIONS"
+        echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
+        echo "  --project Add file in the given project folder, default is the date of today"
+        exit 0
+        ;;
+      *)
+        source_file="$option $@"
+        if [ ! -f $source_file ]
+        then
+          echo "$source_file doesn't exist."
+          exit 1
+        fi
+        break
+        ;;
+    esac
+  done
+
+  local time=$(date '+%Y%m%dT%H%M%S')
+
+  if [[ ! -d "$local_directory/$project" ]]; then
+    mkdir -p "$local_directory/$project"
+  fi
+
+  cp $source_file $local_directory/$project
+}
+
 open(){
   local local_directory=$IDEA_LOCAL
   local append_content=""
@@ -268,7 +323,11 @@ search(){
   then
     cd "$local_directory" && (ls -d1 */ | grep $pattern)
   else
-    cd "$local_directory" && ag -g $pattern .
+    local files=$(cd "$local_directory" && ag -g $pattern .)
+    if [[ "$files" != "" ]]
+    then
+      cd $local_directory && colorful_output_files "$files"
+    fi
   fi
 }
 
@@ -455,6 +514,9 @@ then
       ;;
     goto)
       goto_project $@
+      ;;
+    add)
+      add $@
       ;;
     git-sync)
       git_sync $@
