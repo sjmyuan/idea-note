@@ -150,7 +150,7 @@ open(){
         exit 0
         ;;
       *)
-        note=$(echo "$option $@"|sed -e 's/ /-/g')
+        note=$(echo "$option $@"|sed -e 's/ $//g'|sed -e 's/ /-/g')
         break
         ;;
     esac
