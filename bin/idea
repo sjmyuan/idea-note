@@ -130,7 +130,7 @@ open(){
         shift
         ;;
       help)
-        echo "open [--local <value>] [--file <value>|--stdin] [<note name>]"
+        echo "open [--local <value>] [--file <value>|--stdin|--project <value>] [<note name>]"
         echo ""
         echo "DESCRIPTION"
         echo "  1. If the note name is not given, create a new note with random name."
@@ -287,7 +287,7 @@ search(){
         target="file"
         ;;
       help)
-        echo "search [--local <value>] [--project] [--file] <pattern>"
+        echo "search [--local <value>] [--project|--file] <pattern>"
         echo ""
         echo "DESCRIPTION"
         echo "  Print all the notes which contain the given pattern."

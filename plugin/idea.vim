@@ -19,11 +19,7 @@ function! idea#open(file) abort
   endif
 
   if a:file != ''
-    if filereadable(g:idea#local.'/'.a:file)
-      let idea_file=g:idea#local.'/'.a:file
-    else
-      let idea_file = substitute(work_dir.'/'.a:file.'.md', '\.md\.md', '\.md', 'g')
-    endif
+    let idea_file=work_dir.'/'.a:file
   endif
 
   execute ":e" idea#normalize_path(idea_file)
