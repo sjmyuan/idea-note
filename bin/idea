@@ -225,6 +225,7 @@ goto_project(){
 search(){
   local local_directory=$IDEA_LOCAL
   local pattern=""
+  local target="content"
 
   while [[ $# -gt 0 ]]
   do
@@ -235,14 +236,22 @@ search(){
         local_directory=$1
         shift
         ;;
+      --project)
+        target="project"
+        ;;
+      --file)
+        target="file"
+        ;;
       help)
-        echo "search [--local <value>] <pattern>"
+        echo "search [--local <value>] [--project] [--file] <pattern>"
         echo ""
         echo "DESCRIPTION"
         echo "  Print all the notes which contain the given pattern."
         echo ""
         echo "OPTIONS"
         echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
+        echo "  --project Only search project name"
+        echo "  --file    Only search file name"
         exit 0
         ;;
       *)
@@ -258,11 +267,19 @@ search(){
     exit 1
   fi
 
-  local files=$(cd "$local_directory" && ag -l $pattern . | tr '\n' ' ')
-
-  if [[ "$files" != "" ]]
+  if [[ "$target" == "content" ]]
   then
-    cd $local_directory && colorful_output_files "$files"
+    local files=$(cd "$local_directory" && ag -l $pattern . | tr '\n' ' ')
+
+    if [[ "$files" != "" ]]
+    then
+      cd $local_directory && colorful_output_files "$files"
+    fi
+  elif [[ "$target" == "project" ]]
+  then
+    cd "$local_directory" && (ls -d1 */ | grep $pattern)
+  else
+    cd "$local_directory" && ag -g $pattern .
   fi
 }
 
