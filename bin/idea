@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 set -eo pipefail
 
 usage(){
@@ -9,6 +9,7 @@ usage(){
   echo "  git-sync          flush all the notes to git"
   echo "  ls                list all the notes in 3 days"
   echo "  search <pattern>  serach all the notes which match the given pattern"
+  echo "  goto              goto the given project folder"
 }
 
 colorful_output_files(){
@@ -18,8 +19,63 @@ colorful_output_files(){
   for file in $files
   do
     echo -e "${GREEN}==> idea open ${file} <==${NOCOLOR}"
-    cat $file
+    head -n 5 $file
   done
+}
+
+add(){
+  local local_directory=$IDEA_LOCAL
+  local project=$(date '+%Y-%m-%d')
+  local source_file=""
+
+  while [[ $# -gt 0 ]]
+  do
+    local option=$1
+    shift
+    case $option in 
+      --local)
+        if [ "$1" == "" ]
+        then
+          echo "The local directory can't be empty."
+          exit 1
+        fi
+        local_directory=$1
+        shift
+        ;;
+      --project)
+        project="$1"
+        shift
+        ;;
+      help)
+        echo "add [--local <value>] [--project <value>] <file path>"
+        echo ""
+        echo "DESCRIPTION"
+        echo "  Add the file to given project, the default project is the date of today"
+        echo ""
+        echo "OPTIONS"
+        echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
+        echo "  --project Add file in the given project folder, default is the date of today"
+        exit 0
+        ;;
+      *)
+        source_file="$option $@"
+        if [ ! -f $source_file ]
+        then
+          echo "$source_file doesn't exist."
+          exit 1
+        fi
+        break
+        ;;
+    esac
+  done
+
+  local time=$(date '+%Y%m%dT%H%M%S')
+
+  if [[ ! -d "$local_directory/$project" ]]; then
+    mkdir -p "$local_directory/$project"
+  fi
+
+  cp $source_file $local_directory/$project
 }
 
 open(){
@@ -27,6 +83,8 @@ open(){
   local append_content=""
   local content_source=""
   local note=""
+  local project=$(date '+%Y-%m-%d')
+  local dry_run=0
 
   while [[ $# -gt 0 ]]
   do
@@ -66,9 +124,17 @@ open(){
         fi
         content_source="--stdin"
         read append_content
+        shift
+        ;;
+      --project)
+        project="$1"
+        shift
+        ;;
+      --dry-run)
+        dry_run=1
         ;;
       help)
-        echo "open [--local <value>] [--file <value>|--stdin] [<note name>]"
+        echo "open [--local <value>] [--dry-run] [--file <value>|--stdin|--project <value>] [<note name>]"
         echo ""
         echo "DESCRIPTION"
         echo "  1. If the note name is not given, create a new note with random name."
@@ -79,45 +145,46 @@ open(){
         echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
         echo "  --file    Append the file content to the note"
         echo "  --stdin   Append the stdin to the note"
+        echo "  --project Create note in the given project folder, default is the date of today"
+        echo "  --dry-run Only print the path of note, won't create or open the note"
         exit 0
         ;;
       *)
-        note="$option $@"
+        note=$(echo "$option $@"|sed -e 's/ /-/g')
         break
         ;;
     esac
   done
 
-  local today=$(date '+%Y-%m-%d')
   local time=$(date '+%Y%m%dT%H%M%S')
 
-  if [[ ! -d "$local_directory/$today" ]]; then
-    mkdir -p "$local_directory/$today"
+  if [[ ! -d "$local_directory/$project" ]]; then
+    mkdir -p "$local_directory/$project"
   fi
 
   if [[ "${note}" == "" ]]
   then
-    note="$today/$time.md"
+    note="$project/$time.md"
   else
-    if [[ ! -f "$local_directory/$note" ]]
+    if [ ! -f $local_directory/$note ]
     then
-      note=$(echo $note|sed -e 's/ /-/g')
-      if [[ ! $note =~ .*\.md$ ]]; then
-        note="$today/$note.md"
-      else
-        note="$today/$note"
-      fi
+      note="$project/$note"
     fi
   fi
 
-  if [[ "$content_source" == "--stdin" ]]
+  if [[ $dry_run == 1 ]]
   then
-    cd ${local_directory} && echo $append_content >> $note && $EDITOR $note
-  elif [[ "$content_source" == "--file" ]]
-  then
-    cd ${local_directory} && cat $append_content >> $note && $EDITOR $note
+    echo $local_directory/$note
   else
-    cd ${local_directory} && $EDITOR $note
+    if [[ "$content_source" == "--stdin" ]]
+    then
+      cd ${local_directory} && echo $append_content >> $note && $EDITOR $note
+    elif [[ "$content_source" == "--file" ]]
+    then
+      cd ${local_directory} && cat $append_content >> $note && $EDITOR $note
+    else
+      cd ${local_directory} && $EDITOR $note
+    fi
   fi
 }
 
@@ -143,7 +210,7 @@ list(){
         echo "ls [--local <value>]"
         echo ""
         echo "DESCRIPTION"
-        echo "  Print all the content of notes created in 3 days."
+        echo "  Print all the content of notes modified in 3 days."
         echo ""
         echo "OPTIONS"
         echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
@@ -157,25 +224,61 @@ list(){
   done
 
 
-  local today=$(date '+%Y-%m-%d')
-  local yesterday=$(date -v-1d '+%Y-%m-%d')
-  local the_day_before_yesterday=$(date -v-2d '+%Y-%m-%d')
-  local files=""
-
-  for folder in $the_day_before_yesterday $yesterday $today
-  do
-    if [[ -d "$local_directory/$folder" ]]
-    then
-      files="$files $(cd $local_directory && find $folder -name '*.md' -print)"
-    fi
-  done
+  local files=$(cd $local_directory && find . -not -path '.*/\.*' -type f -newerct '3 day ago' -print|sed -e 's/^\.\///g')
 
   cd $local_directory && colorful_output_files "$files"
+}
+
+goto_project(){
+  local local_directory=$IDEA_LOCAL
+  local project=$(date '+%Y-%m-%d')
+
+  while [[ $# -gt 0 ]]
+  do
+    local option=$1
+    shift
+    case $option in
+      --local)
+        if [ "$1" == "" ]
+        then
+          echo "The local directory can't be empty."
+          exit 1
+        fi
+        local_directory=$1
+        shift
+        ;;
+      help)
+        echo "goto [--local <value>] <project name>"
+        echo ""
+        echo "DESCRIPTION"
+        echo "  Go to the given project folder, if it doesn't exist, create one."
+        echo "  This command will create a subshell working on project folder."
+        echo "  You can exit project by type exit."
+        echo ""
+        echo "OPTIONS"
+        echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
+        exit 0
+        ;;
+      *)
+        project="$option $@"
+        project=$(echo $project|sed -e 's/ /-/g')
+        break
+        ;;
+    esac
+  done
+
+  if [ ! -d $local_directory/$project ]
+  then
+    mkdir -p "$local_directory/$project"
+  fi
+
+  cd $local_directory/$project && exec $SHELL
 }
 
 search(){
   local local_directory=$IDEA_LOCAL
   local pattern=""
+  local target="content"
 
   while [[ $# -gt 0 ]]
   do
@@ -186,14 +289,22 @@ search(){
         local_directory=$1
         shift
         ;;
+      --project)
+        target="project"
+        ;;
+      --file)
+        target="file"
+        ;;
       help)
-        echo "search [--local <value>] <pattern>"
+        echo "search [--local <value>] [--project|--file] <pattern>"
         echo ""
         echo "DESCRIPTION"
         echo "  Print all the notes which contain the given pattern."
         echo ""
         echo "OPTIONS"
         echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
+        echo "  --project Only search project name"
+        echo "  --file    Only search file name"
         exit 0
         ;;
       *)
@@ -209,11 +320,23 @@ search(){
     exit 1
   fi
 
-  local files=$(cd "$local_directory" && ag -l $pattern . | tr '\n' ' ')
-
-  if [[ "$files" != "" ]]
+  if [[ "$target" == "content" ]]
   then
-    cd $local_directory && colorful_output_files "$files"
+    local files=$(cd "$local_directory" && ag -l $pattern . | tr '\n' ' ')
+
+    if [[ "$files" != "" ]]
+    then
+      cd $local_directory && colorful_output_files "$files"
+    fi
+  elif [[ "$target" == "project" ]]
+  then
+    cd "$local_directory" && (ls -d1 */ | grep $pattern)
+  else
+    local files=$(cd "$local_directory" && ag -g $pattern .)
+    if [[ "$files" != "" ]]
+    then
+      cd $local_directory && colorful_output_files "$files"
+    fi
   fi
 }
 
@@ -261,10 +384,10 @@ sync(){
   # local -> remote
   if [ -f $local_version_file ]
   then
-    files="$(cd $local && find . -newer $local_version_file -name '*.md' -print)"
+    files="$(cd $local && find . -newer $local_version_file -not -path '.*/\.*' -type f -print)"
     files="$files $(basename $local_version_file)"
   else
-    files="$(cd $local && find . -name '*.md' -print)"
+    files="$(cd $local && find . -not -path '.*/\.*' -type f -print)"
   fi
 
   for file in $files
@@ -282,7 +405,7 @@ sync(){
   done
 
   # remote -> local
-  files="$(cd $remote && find . -name '*.enc' -print)"
+  files="$(cd $remote && find . -not -path '.*/\.*' -type f -name '*.enc' -print)"
 
   for file in $files
   do
@@ -397,6 +520,12 @@ then
       ;;
     ls)
       list $@
+      ;;
+    goto)
+      goto_project $@
+      ;;
+    add)
+      add $@
       ;;
     git-sync)
       git_sync $@

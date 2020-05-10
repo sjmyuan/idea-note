@@ -4,7 +4,7 @@ class IdeaNote < Formula
   desc "A very simple note tool for cli and vim"
   homepage "https://github.com/sjmyuan/idea-note"
 
-  VERSION = "0.0.3"
+  VERSION = "0.0.4"
   version VERSION
   url "https://github.com/sjmyuan/idea-note/archive/#{VERSION}.zip"
   sha256 "16bfb0d864c15aa11bf2057a67244a6f673951d3dad33d2f685cbdf8adaa7446"
