@@ -59,11 +59,6 @@ add(){
         ;;
       *)
         source_file="$option"
-        if [ ! -f $source_file ]
-        then
-          echo "$source_file doesn't exist."
-          exit 1
-        fi
         break
         ;;
     esac
