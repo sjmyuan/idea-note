@@ -10,6 +10,7 @@ usage(){
   echo "  ls                list all the notes in 3 days"
   echo "  search <pattern>  serach all the notes which match the given pattern"
   echo "  goto              goto the given project folder"
+  echo "  add               add existing file to idea-note"
 }
 
 colorful_output_files(){
@@ -119,7 +120,6 @@ open(){
         fi
         content_source="--stdin"
         read append_content
-        shift
         ;;
       --project)
         project="$1"
