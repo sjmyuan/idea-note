@@ -493,7 +493,81 @@ git_sync(){
   git_pull "$remote_directory" \
     && sync "$local_directory" "$remote_directory" \
     && git_push "$remote_directory"
-  }
+}
+
+s3_pull(){
+  local s3_path=$1
+  local local_path=$2
+  cd "$local_path" && aws s3 sync $s3_path .
+}
+
+s3_push(){
+  local local_path=$1
+  local s3_path=$2
+  cd "$local_path" && aws s3 sync . $s3_path
+}
+
+s3_sync(){
+
+  local local_directory=$IDEA_LOCAL
+  local remote_directory=$IDEA_REMOTE
+  local s3_path=""
+
+  while [[ $# -gt 0 ]]
+  do
+    local option=$1
+    shift
+    case $option in 
+      --local)
+        if [ "$1" == "" ]
+        then
+          echo "The local directory can't be empty."
+          exit 1
+        fi
+        local_directory=$1
+        shift
+        ;;
+      --remote)
+        if [ "$1" == "" ]
+        then
+          echo "The remote directory can't be empty."
+          exit 1
+        fi
+        remote_directory=$1
+        shift
+        ;;
+      help)
+        echo "s3-sync [--local <value>] [--remote <value>] <s3 uri>"
+        echo ""
+        echo "DESCRIPTION"
+        echo "  The workflow of s3 sync"
+        echo "    1. Featch the latest notes from s3 bucket by aws s3 sync"
+        echo "    2. Encrypt the notes which is newer than the version.md in local directory, then copy them to the corresponding remote directory"
+        echo "    3. Decrypt the notes which don't exist in local directory, then copy them to the corresponding local directory"
+        echo "    4. Push new/modified notes to s3 bucket"
+        echo "  Note: all the hiden files will be ignored"
+        echo ""
+        echo "OPTIONS"
+        echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
+        echo "  --remote  Specify the remote notes directory explicitly, will use environment variable IDEA_REMOTE if missing."
+        exit 0
+        ;;
+      *)
+        s3_path=$options
+        break
+        ;;
+    esac
+  done
+
+  if [[ "$s3_path" == ""]]
+  then
+    echo "S3 Uri is required"
+  fi
+
+  s3_pull "$s3_path" "$remote_directory" \
+    && sync "$local_directory" "$remote_directory" \
+    && s3_push "$remote_directory" "$s3_path"
+}
 
 if [[ "$IDEA_LOCAL" == "" ]]
 then
