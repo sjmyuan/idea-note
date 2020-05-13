@@ -7,8 +7,9 @@ usage(){
   echo "COMMANDS"
   echo "  open              create a new note or open the existion note"
   echo "  git-sync          flush all the notes to git"
+  echo "  s3-sync           flush all the notes to given s3 bucket"
   echo "  ls                list all the notes in 3 days"
-  echo "  search <pattern>  serach all the notes which match the given pattern"
+  echo "  search            serach all the notes which match the given pattern"
   echo "  goto              goto the given project folder"
   echo "  add               add existing file to idea-note"
 }
@@ -40,7 +41,7 @@ add(){
           echo "The local directory can't be empty."
           exit 1
         fi
-        local_directory=$1
+        local_directory=$(cd $1;pwd)
         shift
         ;;
       --project)
@@ -93,7 +94,7 @@ open(){
           echo "The local directory can't be empty."
           exit 1
         fi
-        local_directory=$1
+        local_directory=$(cd $1;pwd)
         shift
         ;;
       --file)
@@ -198,7 +199,7 @@ list(){
           echo "The local directory can't be empty."
           exit 1
         fi
-        local_directory=$1
+        local_directory=$(cd $1;pwd)
         shift
         ;;
       help)
@@ -239,7 +240,7 @@ goto_project(){
           echo "The local directory can't be empty."
           exit 1
         fi
-        local_directory=$1
+        local_directory=$(cd $1;pwd)
         shift
         ;;
       help)
@@ -281,7 +282,7 @@ search(){
     shift
     case $option in 
       --local)
-        local_directory=$1
+        local_directory=$(cd $1;pwd)
         shift
         ;;
       --project)
@@ -336,8 +337,8 @@ search(){
 }
 
 sync(){
-  local local=$1
-  local remote=$2
+  local local=$(cd $1;pwd)
+  local remote=$(cd $2;pwd)
   local password=""
   local remote_version_file="$remote/version.md.enc"
   local local_version_file="$local/version.md"
@@ -457,7 +458,7 @@ git_sync(){
           echo "The local directory can't be empty."
           exit 1
         fi
-        local_directory=$1
+        local_directory=$(cd $1;pwd)
         shift
         ;;
       --remote)
@@ -466,7 +467,7 @@ git_sync(){
           echo "The remote directory can't be empty."
           exit 1
         fi
-        remote_directory=$1
+        remote_directory=$(cd $1;pwd)
         shift
         ;;
       help)
@@ -497,14 +498,14 @@ git_sync(){
 
 s3_pull(){
   local s3_path=$1
-  local local_path=$2
-  cd "$local_path" && aws s3 sync $s3_path .
+  local remote_path=$2
+  aws s3 sync $s3_path $remote_path
 }
 
 s3_push(){
-  local local_path=$1
+  local remote_path=$1
   local s3_path=$2
-  cd "$local_path" && aws s3 sync . $s3_path
+  aws s3 sync $remote_path $s3_path
 }
 
 s3_sync(){
@@ -524,7 +525,7 @@ s3_sync(){
           echo "The local directory can't be empty."
           exit 1
         fi
-        local_directory=$1
+        local_directory=$(cd $1;pwd)
         shift
         ;;
       --remote)
@@ -533,7 +534,7 @@ s3_sync(){
           echo "The remote directory can't be empty."
           exit 1
         fi
-        remote_directory=$1
+        remote_directory=$(cd $1;pwd)
         shift
         ;;
       help)
@@ -553,20 +554,20 @@ s3_sync(){
         exit 0
         ;;
       *)
-        s3_path=$options
+        s3_path=$option
         break
         ;;
     esac
   done
 
-  if [[ "$s3_path" == ""]]
+  if [[ "$s3_path" == "" ]]
   then
     echo "S3 Uri is required"
   fi
 
-  s3_pull "$s3_path" "$remote_directory" \
+  s3_pull $s3_path $remote_directory \
     && sync "$local_directory" "$remote_directory" \
-    && s3_push "$remote_directory" "$s3_path"
+    && s3_push $remote_directory $s3_path
 }
 
 if [[ "$IDEA_LOCAL" == "" ]]
@@ -598,6 +599,9 @@ then
       ;;
     git-sync)
       git_sync $@
+      ;;
+    s3-sync)
+      s3_sync $@
       ;;
     search)
       search $@
