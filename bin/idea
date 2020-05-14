@@ -378,9 +378,11 @@ sync(){
   local target_dir=""
 
   # local -> remote
-  if [ -f $local_version_file ]
+  # if local version file or remote version file is missing, sync all the files.
+  # we should use remote version file as sync check point, then we can support both s3 and git sync.
+  if [[ -f $local_version_file && -f $remote_version_file ]]
   then
-    files="$(cd $local && find . -newer $local_version_file -not -path '.*/\.*' -type f -print)"
+    files="$(cd $local && find . -newer $remote_version_file -not -path '.*/\.*' -type f -print)"
     files="$files $(basename $local_version_file)"
   else
     files="$(cd $local && find . -not -path '.*/\.*' -type f -print)"
@@ -505,7 +507,7 @@ s3_pull(){
 s3_push(){
   local remote_path=$1
   local s3_path=$2
-  aws s3 sync $remote_path $s3_path
+  aws s3 sync --storage-class STANDARD_IA $remote_path $s3_path
 }
 
 s3_sync(){
