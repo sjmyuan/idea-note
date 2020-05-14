@@ -7,8 +7,9 @@ usage(){
   echo "COMMANDS"
   echo "  open              create a new note or open the existion note"
   echo "  git-sync          flush all the notes to git"
+  echo "  s3-sync           flush all the notes to given s3 bucket"
   echo "  ls                list all the notes in 3 days"
-  echo "  search <pattern>  serach all the notes which match the given pattern"
+  echo "  search            serach all the notes which match the given pattern"
   echo "  goto              goto the given project folder"
   echo "  add               add existing file to idea-note"
 }
@@ -40,7 +41,7 @@ add(){
           echo "The local directory can't be empty."
           exit 1
         fi
-        local_directory=$1
+        local_directory=$(cd $1;pwd)
         shift
         ;;
       --project)
@@ -93,7 +94,7 @@ open(){
           echo "The local directory can't be empty."
           exit 1
         fi
-        local_directory=$1
+        local_directory=$(cd $1;pwd)
         shift
         ;;
       --file)
@@ -198,7 +199,7 @@ list(){
           echo "The local directory can't be empty."
           exit 1
         fi
-        local_directory=$1
+        local_directory=$(cd $1;pwd)
         shift
         ;;
       help)
@@ -239,7 +240,7 @@ goto_project(){
           echo "The local directory can't be empty."
           exit 1
         fi
-        local_directory=$1
+        local_directory=$(cd $1;pwd)
         shift
         ;;
       help)
@@ -281,7 +282,7 @@ search(){
     shift
     case $option in 
       --local)
-        local_directory=$1
+        local_directory=$(cd $1;pwd)
         shift
         ;;
       --project)
@@ -336,9 +337,9 @@ search(){
 }
 
 sync(){
-  local local=$1
-  local remote=$2
-  local password=""
+  local local=$(cd $1;pwd)
+  local remote=$(cd $2;pwd)
+  local password="$3"
   local remote_version_file="$remote/version.md.enc"
   local local_version_file="$local/version.md"
 
@@ -352,7 +353,10 @@ sync(){
     mkdir -p $remote
   fi
 
-  read -sp "Enter your passphrase: " password
+  if [ "$password" == "" ]
+  then
+    read -sp "Enter your passphrase: " password
+  fi
 
   if [ "$password" == "" ]
   then
@@ -377,9 +381,11 @@ sync(){
   local target_dir=""
 
   # local -> remote
-  if [ -f $local_version_file ]
+  # if local version file or remote version file is missing, sync all the files.
+  # we should use remote version file as sync check point, then we can support both s3 and git sync.
+  if [[ -f $local_version_file && -f $remote_version_file ]]
   then
-    files="$(cd $local && find . -newer $local_version_file -not -path '.*/\.*' -type f -print)"
+    files="$(cd $local && find . -newer $remote_version_file -not -path '.*/\.*' -type f -print)"
     files="$files $(basename $local_version_file)"
   else
     files="$(cd $local && find . -not -path '.*/\.*' -type f -print)"
@@ -445,6 +451,7 @@ git_sync(){
 
   local local_directory=$IDEA_LOCAL
   local remote_directory=$IDEA_REMOTE
+  local password=""
 
   while [[ $# -gt 0 ]]
   do
@@ -457,7 +464,7 @@ git_sync(){
           echo "The local directory can't be empty."
           exit 1
         fi
-        local_directory=$1
+        local_directory=$(cd $1;pwd)
         shift
         ;;
       --remote)
@@ -466,11 +473,20 @@ git_sync(){
           echo "The remote directory can't be empty."
           exit 1
         fi
-        remote_directory=$1
+        remote_directory=$(cd $1;pwd)
+        shift
+        ;;
+      --password)
+        if [ "$1" == "" ]
+        then
+          echo "Password can't be empty"
+          exit 1
+        fi
+        password="$1"
         shift
         ;;
       help)
-        echo "git-sync [--local <value>] [--remote <value>]"
+        echo "git-sync [--local <value>] [--remote <value>] [--password <value>]"
         echo ""
         echo "DESCRIPTION"
         echo "  The workflow of git sync"
@@ -479,8 +495,9 @@ git_sync(){
         echo "    3. Decrypt the notes which don't exist in local directory, then copy them to the corresponding local directory"
         echo ""
         echo "OPTIONS"
-        echo "  --local   Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
-        echo "  --remote  Specify the remote notes directory explicitly, will use environment variable IDEA_REMOTE if missing."
+        echo "  --local     Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
+        echo "  --remote    Specify the remote notes directory explicitly, will use environment variable IDEA_REMOTE if missing."
+        echo "  --password  Specify the password to encrypt notes"
         exit 0
         ;;
       *)
@@ -491,9 +508,94 @@ git_sync(){
   done
 
   git_pull "$remote_directory" \
-    && sync "$local_directory" "$remote_directory" \
+    && sync "$local_directory" "$remote_directory" "$password" \
     && git_push "$remote_directory"
-  }
+}
+
+s3_pull(){
+  local s3_path=$1
+  local remote_path=$2
+  aws s3 sync $s3_path $remote_path
+}
+
+s3_push(){
+  local remote_path=$1
+  local s3_path=$2
+  aws s3 sync --storage-class STANDARD_IA $remote_path $s3_path
+}
+
+s3_sync(){
+
+  local local_directory=$IDEA_LOCAL
+  local remote_directory=$IDEA_REMOTE
+  local s3_path=""
+  local password=""
+
+  while [[ $# -gt 0 ]]
+  do
+    local option=$1
+    shift
+    case $option in 
+      --local)
+        if [ "$1" == "" ]
+        then
+          echo "The local directory can't be empty."
+          exit 1
+        fi
+        local_directory=$(cd $1;pwd)
+        shift
+        ;;
+      --remote)
+        if [ "$1" == "" ]
+        then
+          echo "The remote directory can't be empty."
+          exit 1
+        fi
+        remote_directory=$(cd $1;pwd)
+        shift
+        ;;
+      --password)
+        if [ "$1" == "" ]
+        then
+          echo "Password can't be empty"
+          exit 1
+        fi
+        password="$1"
+        shift
+        ;;
+      help)
+        echo "s3-sync [--local <value>] [--remote <value>] [--password <value>] <s3 uri>"
+        echo ""
+        echo "DESCRIPTION"
+        echo "  The workflow of s3 sync"
+        echo "    1. Featch the latest notes from s3 bucket by aws s3 sync"
+        echo "    2. Encrypt the notes which is newer than the version.md in local directory, then copy them to the corresponding remote directory"
+        echo "    3. Decrypt the notes which don't exist in local directory, then copy them to the corresponding local directory"
+        echo "    4. Push new/modified notes to s3 bucket"
+        echo "  Note: all the hiden files will be ignored"
+        echo ""
+        echo "OPTIONS"
+        echo "  --local     Specify the local notes directory explicitly, will use environment variable IDEA_LOCAL if missing."
+        echo "  --remote    Specify the remote notes directory explicitly, will use environment variable IDEA_REMOTE if missing."
+        echo "  --password  Specify the password to encrypt notes"
+        exit 0
+        ;;
+      *)
+        s3_path=$option
+        break
+        ;;
+    esac
+  done
+
+  if [[ "$s3_path" == "" ]]
+  then
+    echo "S3 Uri is required"
+  fi
+
+  s3_pull $s3_path $remote_directory \
+    && sync "$local_directory" "$remote_directory" "$password"\
+    && s3_push $remote_directory $s3_path
+}
 
 if [[ "$IDEA_LOCAL" == "" ]]
 then
@@ -524,6 +626,9 @@ then
       ;;
     git-sync)
       git_sync $@
+      ;;
+    s3-sync)
+      s3_sync $@
       ;;
     search)
       search $@
