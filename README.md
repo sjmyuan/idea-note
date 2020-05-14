@@ -46,6 +46,7 @@ Notes: Only MacOS and Neovim have been tested for now.
 * Search note name by keywords
 * Search project name by keywords
 * Synchronize note to git remote repository
+* Synchronize note to s3 bucket
 * Encrypt note
 
 ### Vim Plugin
@@ -276,6 +277,13 @@ $ git clone git@github.com:sjmyuan/idea-note.git
 
   ```sh
   $ idea git-sync
+  $ idea git-sync --password <password>
+  ```
+* Synchronize notes to s3 bucket
+
+  ```sh
+  $ idea s3-sync s3://<bucket name>/<folder name>
+  $ idea s3-sync --password <password> s3://<bucket name>/<folder name>
   ```
 
 ### Vim Plugin
