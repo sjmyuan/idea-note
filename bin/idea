@@ -607,6 +607,17 @@ then
   IDEA_REMOTE="$HOME/.idea/remote"
 fi
 
+if [[ ! -d "$IDEA_LOCAL" ]]
+then
+  echo "$IDEA_LOCAL does not exist" && exit 1
+fi
+
+if [[ ! -d "$IDEA_REMOTE" ]]
+then
+  echo "$IDEA_REMOTE does not exist" && exit 1
+fi
+
+
 if [ $# -gt 0 ]
 then
   COMMAND="$1"
